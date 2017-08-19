@@ -1,19 +1,50 @@
 'use strict';
 
 var Alexa = require('alexa-sdk');
-var APP_ID = undefined; // TODO replace with your app ID (OPTIONAL).
-var recipes = require('./recipes');
+var APP_ID = "amzn1.ask.skill.f2fe9fd8-cd82-48b1-8da9-f95d69796756"
+var request = require('request');
 
 exports.handler = function(event, context, callback) {
     var alexa = Alexa.handler(event, context);
-    alexa.APP_ID = APP_ID;
+    alexa.appId = APP_ID;
     // To enable string internationalization (i18n) features, set a resources object.
-    alexa.resources = languageStrings;
     alexa.registerHandlers(handlers);
     alexa.execute();
 };
 
+
 var handlers = {
+    //newsession
+    'NewSession': function() {
+          // this.emit(':ask', 'Welcome to Capital One Rewards. Would you like to hear your reward accounts listed?');
+   
+        let options = {
+          url: 'http://api.devexhacks.com/rewards/accounts',
+          headers: {
+            Accept: 'application/json;v=1',
+            // Authorization: `Bearer ${this.event.session.user.accessToken}`
+            Authorization: 'Bearer eyJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwicGNrIjoxLCJhbGciOiJkaXIiLCJ0diI6Miwia2lkIjoiYTdxIn0..Q8EPUTo189PyagVaeXKw9XgvYN1pEz5Vgp1bgF4Hj9TE2anFkmGILcf7UX9iO6L0cUTgJQm3blatkUZUyUKc6cHFyyuVPKmtZDIU2zmP6VEhxmroUfeqh8YJnOEw9LRVKU1Pq4fVRuZMsIM1Mf6F2oMOAFL8JTw7AK4CQVUWtti4KHaNBtDX9cHOuwRtDbKhQbmySLP0g5ENzrC9gWMLprmq66hX5bI4TAiF2f7KlgjtT9lvph9pLyDsfBhtOanWj6gVmYMqxcNQlUHcgtsH3nlthX1PsOKQppDtmS09hPELzTxEn2kxk2btJ0KPy2iQFQyDSWfER1xgJnFDASr1sg8MNeQh3Qjmp4vuruQMimu1IFVvb1cIsIDS7cWPCUPa2UFYz9YfW1uXVnUpOyZTCWZ3E28YL70Rn2TbP4Hw030rgBWF5Ok1YD51e7BWJXXCq1lIWUG85WmjWZ5Il4nVNZBxBFDPR7lQMG2Gw36ibffzfTDwwHfWhlpkmbqtRLawKEVtYNDcpIvocujQJFHlwCRJ9uex5BXJzQQ6Mrp1cvxp3sp65mU5EPSU4J1OK0Iuj8Yv.I3YRuEIDtnqtHjjjrb9OK0A'
+          }
+        }
+        request(options, (e, res, body) => {
+          console.log(e,res, this)
+          let rewardsAccounts = JSON.parse(body).rewardsAccounts
+          let speak = `There were ${rewardsAccounts.length} rewards accounts found. Your rewards accounts are: ${breakTime(100)}`
+          for(let i=0; i<rewardsAccounts.length; i++) {
+            let account = rewardsAccounts[i];
+            this.attributes[`card_${i}`] = account;
+            speak += `${i+1}${breakTime(100)}${account.accountDisplayName}${breakTime(200)}`
+          }
+          // let ask = `Which account would you like to hear more about?`;
+          // speak += ask;
+          // this.handler.state = states.ACCOUNTMODE;
+          this.emit(':tell', speak);
+        });
+
+
+    },
+
+
     //Use LaunchRequest, instead of NewSession if you want to use the one-shot model
     // Alexa, ask [my-skill-invocation-name] to (do something)...
     'LaunchRequest': function () {
@@ -78,51 +109,7 @@ var handlers = {
     }
 };
 
-var languageStrings = {
-    "en": {
-        "translation": {
-            "RECIPES": recipes.RECIPE_EN_US,
-            "SKILL_NAME": "Minecraft Helper",
-            "WELCOME_MESSAGE": "Welcome to %s. You can ask a question like, what\'s the recipe for a chest? ... Now, what can I help you with.",
-            "WELCOME_REPROMPT": "For instructions on what you can say, please say help me.",
-            "DISPLAY_CARD_TITLE": "%s  - Recipe for %s.",
-            "HELP_MESSAGE": "You can ask questions such as, what\'s the recipe, or, you can say exit...Now, what can I help you with?",
-            "HELP_REPROMPT": "You can say things like, what\'s the recipe, or you can say exit...Now, what can I help you with?",
-            "STOP_MESSAGE": "Goodbye!",
-            "RECIPE_REPEAT_MESSAGE": "Try saying repeat.",
-            "RECIPE_NOT_FOUND_MESSAGE": "I\'m sorry, I currently do not know ",
-            "RECIPE_NOT_FOUND_WITH_ITEM_NAME": "the recipe for %s. ",
-            "RECIPE_NOT_FOUND_WITHOUT_ITEM_NAME": "that recipe. ",
-            "RECIPE_NOT_FOUND_REPROMPT": "What else can I help with?"
-        }
-    },
-    "en-US": {
-        "translation": {
-            "RECIPES" : recipes.RECIPE_EN_US,
-            "SKILL_NAME" : "American Minecraft Helper"
-        }
-    },
-    "en-GB": {
-        "translation": {
-            "RECIPES": recipes.RECIPE_EN_GB,
-            "SKILL_NAME": "British Minecraft Helper"
-        }
-    },
-    "de": {
-        "translation": {
-            "RECIPES" : recipes.RECIPE_DE_DE,
-            "SKILL_NAME" : "Assistent für Minecraft in Deutsch",
-            "WELCOME_MESSAGE": "Willkommen bei %s. Du kannst beispielsweise die Frage stellen: Welche Rezepte gibt es für eine Truhe? ... Nun, womit kann ich dir helfen?",
-            "WELCOME_REPROMPT": "Wenn du wissen möchtest, was du sagen kannst, sag einfach „Hilf mir“.",
-            "DISPLAY_CARD_TITLE": "%s - Rezept für %s.",
-            "HELP_MESSAGE": "Du kannst beispielsweise Fragen stellen wie „Wie geht das Rezept für“ oder du kannst „Beenden“ sagen ... Wie kann ich dir helfen?",
-            "HELP_REPROMPT": "Du kannst beispielsweise Sachen sagen wie „Wie geht das Rezept für“ oder du kannst „Beenden“ sagen ... Wie kann ich dir helfen?",
-            "STOP_MESSAGE": "Auf Wiedersehen!",
-            "RECIPE_REPEAT_MESSAGE": "Sage einfach „Wiederholen“.",
-            "RECIPE_NOT_FOUND_MESSAGE": "Tut mir leid, ich kenne derzeit ",
-            "RECIPE_NOT_FOUND_WITH_ITEM_NAME": "das Rezept für %s nicht. ",
-            "RECIPE_NOT_FOUND_WITHOUT_ITEM_NAME": "dieses Rezept nicht. ",
-            "RECIPE_NOT_FOUND_REPROMPT": "Womit kann ich dir sonst helfen?"
-        }
-    }
-};
+let breakTime = (num) => {
+    return `<break time = "${num}ms"/>`
+}
+
